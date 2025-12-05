@@ -127,7 +127,7 @@ export default function HomePage() {
                 alt="أستاذ / عزيز"
                 fill
                 priority
-                className="object-cover rounded-full border-4 border-brand/20 shadow-lg object-[30%_center]"
+                className="object-cover rounded-full border-4 border-brand/20 shadow-lg"
                 sizes="(max-width: 768px) 256px, 320px"
               />
             </div>
