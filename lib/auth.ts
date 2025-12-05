@@ -37,7 +37,7 @@ export const authOptions: AuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.phoneNumber || !credentials?.password) {
-          throw new Error("Missing credentials");
+          throw new Error("MISSING_CREDENTIALS");
         }
 
         const user = await db.user.findUnique({
@@ -46,8 +46,12 @@ export const authOptions: AuthOptions = {
           },
         });
 
-        if (!user || !user.hashedPassword) {
-          throw new Error("Invalid credentials");
+        if (!user) {
+          throw new Error("USER_NOT_FOUND");
+        }
+
+        if (!user.hashedPassword) {
+          throw new Error("NO_PASSWORD_SET");
         }
 
         const isPasswordValid = await bcrypt.compare(
@@ -56,7 +60,7 @@ export const authOptions: AuthOptions = {
         );
 
         if (!isPasswordValid) {
-          throw new Error("Invalid credentials");
+          throw new Error("INVALID_PASSWORD");
         }
 
         return {
@@ -81,6 +85,19 @@ export const authOptions: AuthOptions = {
     error: "/sign-in",
   },
   callbacks: {
+    async signIn({ user, account, profile }) {
+      return true;
+    },
+    async redirect({ url, baseUrl }) {
+      // Handle error redirects with error messages
+      if (url.startsWith("/sign-in")) {
+        return url;
+      }
+      if (url.startsWith(baseUrl)) {
+        return url;
+      }
+      return baseUrl;
+    },
     async session({ token, session }) {
       if (token) {
         session.user.id = token.id;

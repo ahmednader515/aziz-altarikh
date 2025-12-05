@@ -84,3 +84,4 @@ export const config = {
     "/((?!api|_next/static|_next/image|favicon.ico|teacher-image.png|logo.png|male.png|history.png|tablet.png|history-book.png|medal.png|eng.png|australia.png|new-zealand.png|europe.png|asia.png|africa.png|south-america.png|north-america.png|oceania.png|antarctica.png|atom.png|sodium.png|music.png|tiktok.png|facebook.png|instagram.png|twitter.png|youtube.png|linkedin.png|).*)",
   ],
 };
+

@@ -34,19 +34,62 @@ export default function SignInPage() {
     e.preventDefault();
     setIsLoading(true);
 
+    // Client-side validation
+    if (!formData.phoneNumber.trim() || !formData.password.trim()) {
+      toast.error("الرجاء إدخال رقم الهاتف وكلمة المرور");
+      setIsLoading(false);
+      return;
+    }
+
     try {
+      // First, validate credentials with our custom API to get specific error messages
+      const validationResponse = await fetch("/api/auth/signin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phoneNumber: formData.phoneNumber.trim(),
+          password: formData.password,
+        }),
+      });
+
+      const validationData = await validationResponse.json();
+
+      if (!validationResponse.ok || validationData.error) {
+        // Handle specific error messages
+        const errorMessages: Record<string, string> = {
+          "MISSING_CREDENTIALS": "الرجاء إدخال رقم الهاتف وكلمة المرور",
+          "INVALID_CREDENTIALS": "رقم الهاتف أو كلمة المرور خطأ",
+          "NO_PASSWORD_SET": "هذا الحساب لا يحتوي على كلمة مرور. يرجى استخدام طريقة تسجيل دخول أخرى",
+          "SERVER_ERROR": "حدث خطأ في الخادم. يرجى المحاولة لاحقاً",
+        };
+
+        const errorMessage = errorMessages[validationData.error] || "رقم الهاتف أو كلمة المرور خطأ";
+        toast.error(errorMessage);
+        setIsLoading(false);
+        return;
+      }
+
+      // If validation passes, proceed with NextAuth sign-in
       const result = await signIn("credentials", {
-        phoneNumber: formData.phoneNumber,
+        phoneNumber: formData.phoneNumber.trim(),
         password: formData.password,
         redirect: false,
       });
 
       if (result?.error) {
-        if (result.error === "CredentialsSignin") {
-          toast.error("رقم الهاتف أو كلمة المرور غير صحيحة");
-        } else {
-          toast.error("حدث خطأ أثناء تسجيل الدخول");
-        }
+        // Fallback error handling for NextAuth errors
+        const errorMessages: Record<string, string> = {
+          "CredentialsSignin": "رقم الهاتف أو كلمة المرور خطأ",
+          "Configuration": "حدث خطأ في إعدادات النظام. يرجى المحاولة لاحقاً",
+          "AccessDenied": "ليس لديك صلاحية للدخول",
+          "Verification": "فشل التحقق من الحساب",
+        };
+
+        const errorMessage = errorMessages[result.error] || "رقم الهاتف أو كلمة المرور خطأ";
+        toast.error(errorMessage);
+        setIsLoading(false);
         return;
       }
 
@@ -65,8 +108,19 @@ export default function SignInPage() {
       } else {
         router.replace(target);
       }
-    } catch {
-      toast.error("حدث خطأ أثناء تسجيل الدخول");
+    } catch (error) {
+      // Handle network errors or other unexpected errors
+      if (error instanceof Error) {
+        if (error.message.includes("Network") || error.message.includes("fetch")) {
+          toast.error("خطأ في الاتصال بالشبكة. يرجى التحقق من اتصالك بالإنترنت");
+        } else if (error.message.includes("timeout")) {
+          toast.error("انتهت مهلة الاتصال. يرجى المحاولة مرة أخرى");
+        } else {
+          toast.error("رقم الهاتف أو كلمة المرور خطأ");
+        }
+      } else {
+        toast.error("رقم الهاتف أو كلمة المرور خطأ");
+      }
     } finally {
       setIsLoading(false);
     }
