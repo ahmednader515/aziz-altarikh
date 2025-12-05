@@ -5,9 +5,10 @@ import { db } from "@/lib/db";
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { userId: string } }
+    { params }: { params: Promise<{ userId: string }> }
 ) {
     try {
+        const { userId } = await params;
         const session = await getServerSession(authOptions);
 
         if (!session?.user) {
@@ -20,7 +21,7 @@ export async function GET(
 
         const user = await db.user.findUnique({
             where: {
-                id: params.userId
+                id: userId
             }
         });
 
@@ -30,7 +31,7 @@ export async function GET(
 
         const userProgress = await db.userProgress.findMany({
             where: {
-                userId: params.userId
+                userId: userId
             },
             include: {
                 chapter: {
@@ -51,7 +52,7 @@ export async function GET(
 
         const purchases = await db.purchase.findMany({
             where: {
-                userId: params.userId
+                userId: userId
             },
             include: {
                 course: {

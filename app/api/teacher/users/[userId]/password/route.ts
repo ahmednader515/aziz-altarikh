@@ -6,9 +6,10 @@ import bcrypt from "bcryptjs";
 
 export async function PATCH(
     req: NextRequest,
-    { params }: { params: { userId: string } }
+    { params }: { params: Promise<{ userId: string }> }
 ) {
     try {
+        const { userId } = await params;
         const session = await getServerSession(authOptions);
 
         if (!session?.user) {
@@ -27,10 +28,7 @@ export async function PATCH(
 
         const user = await db.user.findUnique({
             where: {
-                id: params.userId,
-                role: {
-                    in: ["USER", "TEACHER", "ADMIN"] // Teachers can change password for all users
-                }
+                id: userId
             }
         });
 
@@ -38,11 +36,16 @@ export async function PATCH(
             return new NextResponse("User not found", { status: 404 });
         }
 
+        // Teachers can change password for all users (USER, TEACHER, ADMIN)
+        if (!["USER", "TEACHER", "ADMIN"].includes(user.role)) {
+            return new NextResponse("User not found", { status: 404 });
+        }
+
         const hashedPassword = await bcrypt.hash(newPassword, 12);
 
         await db.user.update({
             where: {
-                id: params.userId
+                id: userId
             },
             data: {
                 hashedPassword

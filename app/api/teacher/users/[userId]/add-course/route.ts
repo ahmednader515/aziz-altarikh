@@ -4,9 +4,10 @@ import { db } from "@/lib/db";
 
 export async function POST(
     req: NextRequest,
-    { params }: { params: { userId: string } }
+    { params }: { params: Promise<{ userId: string }> }
 ) {
     try {
+        const { userId } = await params;
         const session = await auth();
         
         if (!session?.user) {
@@ -36,12 +37,11 @@ export async function POST(
         // Check if user exists and is a student
         const user = await db.user.findUnique({
             where: {
-                id: params.userId,
-                role: "USER"
+                id: userId
             }
         });
 
-        if (!user) {
+        if (!user || user.role !== "USER") {
             return NextResponse.json(
                 { error: "Student not found" },
                 { status: 404 }
@@ -51,12 +51,11 @@ export async function POST(
         // Check if course exists and is published
         const course = await db.course.findUnique({
             where: {
-                id: courseId,
-                isPublished: true
+                id: courseId
             }
         });
 
-        if (!course) {
+        if (!course || !course.isPublished) {
             return NextResponse.json(
                 { error: "Course not found or not published" },
                 { status: 404 }
@@ -66,7 +65,7 @@ export async function POST(
         // Check if student already has this course
         const existingPurchase = await db.purchase.findFirst({
             where: {
-                userId: params.userId,
+                userId: userId,
                 courseId: courseId,
                 status: "ACTIVE"
             }
@@ -82,7 +81,7 @@ export async function POST(
         // Create purchase record
         const purchase = await db.purchase.create({
             data: {
-                userId: params.userId,
+                userId: userId,
                 courseId: courseId,
                 status: "ACTIVE"
             }
@@ -104,9 +103,10 @@ export async function POST(
 
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: { userId: string } }
+    { params }: { params: Promise<{ userId: string }> }
 ) {
     try {
+        const { userId } = await params;
         const session = await auth();
 
         if (!session?.user) {
@@ -135,12 +135,11 @@ export async function DELETE(
         // Ensure student exists
         const user = await db.user.findUnique({
             where: {
-                id: params.userId,
-                role: "USER",
+                id: userId,
             },
         });
 
-        if (!user) {
+        if (!user || user.role !== "USER") {
             return NextResponse.json(
                 { error: "Student not found" },
                 { status: 404 }
@@ -151,7 +150,7 @@ export async function DELETE(
         const existingPurchase = await db.purchase.findUnique({
             where: {
                 userId_courseId: {
-                    userId: params.userId,
+                    userId: userId,
                     courseId,
                 },
             },

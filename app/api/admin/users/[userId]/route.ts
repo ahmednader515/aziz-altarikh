@@ -5,9 +5,10 @@ import { db } from "@/lib/db";
 
 export async function PATCH(
     req: NextRequest,
-    { params }: { params: { userId: string } }
+    { params }: { params: Promise<{ userId: string }> }
 ) {
     try {
+        const { userId } = await params;
         const session = await getServerSession(authOptions);
 
         if (!session?.user) {
@@ -23,7 +24,7 @@ export async function PATCH(
         // Check if user exists
         const existingUser = await db.user.findUnique({
             where: {
-                id: params.userId
+                id: userId
             }
         });
 
@@ -50,7 +51,7 @@ export async function PATCH(
                 where: {
                     parentPhoneNumber: parentPhoneNumber,
                     id: {
-                        not: params.userId
+                        not: userId
                     }
                 }
             });
@@ -63,7 +64,7 @@ export async function PATCH(
         // Update user
         const updatedUser = await db.user.update({
             where: {
-                id: params.userId
+                id: userId
             },
             data: {
                 ...(fullName && { fullName }),
@@ -82,9 +83,10 @@ export async function PATCH(
 
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: { userId: string } }
+    { params }: { params: Promise<{ userId: string }> }
 ) {
     try {
+        const { userId } = await params;
         const session = await getServerSession(authOptions);
 
         if (!session?.user) {
@@ -98,7 +100,7 @@ export async function DELETE(
         // Check if user exists
         const existingUser = await db.user.findUnique({
             where: {
-                id: params.userId
+                id: userId
             }
         });
 
@@ -107,14 +109,14 @@ export async function DELETE(
         }
 
         // Prevent admin from deleting themselves
-        if (params.userId === session.user.id) {
+        if (userId === session.user.id) {
             return new NextResponse("Cannot delete your own account", { status: 400 });
         }
 
         // Delete user (this will cascade delete related data due to Prisma relations)
         await db.user.delete({
             where: {
-                id: params.userId
+                id: userId
             }
         });
 

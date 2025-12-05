@@ -4,9 +4,10 @@ import { db } from "@/lib/db";
 
 export async function GET(
   req: Request,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
+    const { userId } = await params;
     const session = await auth();
 
     if (!session?.user) {
@@ -18,15 +19,15 @@ export async function GET(
     }
 
     const user = await db.user.findUnique({
-      where: { id: params.userId, role: "USER" },
+      where: { id: userId },
     });
 
-    if (!user) {
+    if (!user || user.role !== "USER") {
       return NextResponse.json({ error: "Student not found" }, { status: 404 });
     }
 
     const purchases = await db.purchase.findMany({
-      where: { userId: params.userId, status: "ACTIVE" },
+      where: { userId: userId, status: "ACTIVE" },
       include: {
         course: {
           select: {
