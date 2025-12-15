@@ -124,7 +124,7 @@ export default function HomePage() {
             <div className="relative w-64 h-64 md:w-80 md:h-80">
               <Image
                 src="/teacher-image.png"
-                alt="أستاذ / عزيز"
+                alt="أستاذ / محمود عزيز"
                 fill
                 priority
                 className="object-cover rounded-full border-4 border-brand/20 shadow-lg"
@@ -241,7 +241,7 @@ export default function HomePage() {
             className="text-center mt-0 md:mt-0 order-2 md:order-1"
           >
             <h1 className="text-4xl md:text-6xl font-bold mb-4">
-              أستاذ / <span className="text-brand">عزيز</span>
+              أستاذ / <span className="text-brand">محمود عزيز</span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground mb-8">
               هنا الحكايات بتصحى من تاني
@@ -426,7 +426,7 @@ export default function HomePage() {
               {
                 name: "عصام اسامة",
                 grade: "الصف الأول الثانوي",
-                testimonial: "تجربة رائعة مع الأستاذ عزيز، شرح مميز وطريقة سهلة في توصيل المعلومة"
+                testimonial: "تجربة رائعة مع الأستاذ محمود شرح مميز وطريقة سهلة في توصيل المعلومة"
               },
               {
                 name: "سيف طارق",
@@ -513,7 +513,7 @@ export default function HomePage() {
                 <Star className="h-6 w-6 text-brand" />
               </div>
               <h3 className="text-xl font-semibold mb-2">جودة عالية</h3>
-              <p className="text-muted-foreground">أفضل منصة متخصصة لكورسات اللغة العربية</p>
+              <p className="text-muted-foreground">أفضل منصة متخصصة لكورسات التاريخ</p>
             </motion.div>
 
             <motion.div

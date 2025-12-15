@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,12 +10,15 @@ import Link from "next/link";
 import axios, { AxiosError } from "axios";
 import { Check, X, Eye, EyeOff, ChevronLeft } from "lucide-react";
 import Image from "next/image";
+import ReCAPTCHA from "react-google-recaptcha";
 
 export default function SignUpPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
   const [formData, setFormData] = useState({
     fullName: "",
     phoneNumber: "",
@@ -51,8 +54,17 @@ export default function SignUpPage() {
       return;
     }
 
+    if (!recaptchaToken) {
+      toast.error("الرجاء إكمال التحقق من reCAPTCHA");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const response = await axios.post("/api/auth/register", formData);
+      const response = await axios.post("/api/auth/register", {
+        ...formData,
+        recaptchaToken,
+      });
       
       if (response.data.success) {
         toast.success("تم إنشاء الحساب بنجاح");
@@ -62,7 +74,11 @@ export default function SignUpPage() {
       const axiosError = error as AxiosError;
       if (axiosError.response?.status === 400) {
         const errorMessage = axiosError.response.data as string;
-        if (errorMessage.includes("Phone number already exists")) {
+        if (errorMessage.includes("reCAPTCHA")) {
+          toast.error("فشل التحقق من reCAPTCHA. يرجى المحاولة مرة أخرى");
+          recaptchaRef.current?.reset();
+          setRecaptchaToken(null);
+        } else if (errorMessage.includes("Phone number already exists")) {
           toast.error("رقم الهاتف مسجل مسبقاً");
         } else if (errorMessage.includes("Parent phone number already exists")) {
           toast.error("رقم هاتف الوالد مسجل مسبقاً");
@@ -76,6 +92,8 @@ export default function SignUpPage() {
       } else {
         toast.error("حدث خطأ أثناء إنشاء الحساب");
       }
+      recaptchaRef.current?.reset();
+      setRecaptchaToken(null);
     } finally {
       setIsLoading(false);
     }
@@ -246,10 +264,23 @@ export default function SignUpPage() {
               </div>
             </div>
 
+            <div className="flex justify-center">
+              <ReCAPTCHA
+                ref={recaptchaRef}
+                sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""}
+                onChange={(token) => setRecaptchaToken(token)}
+                onExpired={() => setRecaptchaToken(null)}
+                onError={() => {
+                  toast.error("حدث خطأ في reCAPTCHA");
+                  setRecaptchaToken(null);
+                }}
+              />
+            </div>
+
             <Button
               type="submit"
               className="w-full h-10 bg-brand hover:bg-brand/90 text-white"
-              disabled={isLoading || !passwordChecks.isValid}
+              disabled={isLoading || !passwordChecks.isValid || !recaptchaToken}
             >
               {isLoading ? "جاري إنشاء الحساب..." : "إنشاء حساب"}
             </Button>
